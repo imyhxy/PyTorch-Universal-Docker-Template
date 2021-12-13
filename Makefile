@@ -35,9 +35,9 @@ di:
 	test -s ${DI_FILE} || echo "**" >> ${DI_FILE}
 
 # The following are the default builds for the make commands.
-CC                      = 5.2 6.0 6.1 7.0 7.5 8.0 8.6+PTX
+CC                      = 7.5
 TRAIN_NAME              = train
-TZ                      = Asia/Seoul
+TZ                      = Asia/Shanghai
 PYTORCH_VERSION_TAG     = v1.10.0
 TORCHVISION_VERSION_TAG = v0.11.1
 TORCHTEXT_VERSION_TAG   = v0.11.0-rc3

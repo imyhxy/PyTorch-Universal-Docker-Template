@@ -262,7 +262,7 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; \
     > /etc/apt/apt.conf.d/keep-cache
 
 # `tzdata` requires a timezone and noninteractive mode.
-ENV TZ=Asia/Seoul
+ENV TZ=Asia/Shanghai
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Speedups in `apt` and `pip` installs for Korean users. Change URLs for other locations.
@@ -272,11 +272,11 @@ ARG DEBIAN_FRONTEND=noninteractive
 # 1. Installation images should be modular and should not be affected by the timezone.
 # 2. Installation is very short compared to build but a speedup is desirable if a build is already cached.
 ARG DEB_OLD=http://archive.ubuntu.com
-ARG DEB_NEW=http://mirror.kakao.com
-ARG INDEX_URL=http://mirror.kakao.com/pypi/simple
-ARG TRUSTED_HOST=mirror.kakao.com
+ARG DEB_NEW=http://mirrors.aliyun.com
+ARG INDEX_URL=http://mirrors.aliyun.com/pypi/simple
+ARG TRUSTED_HOST=mirrors.aliyun.com
 # Remove any pre-existing global `pip` configurations.
-RUN if [ $TZ = Asia/Seoul ]; then \
+RUN if [ $TZ = Asia/Shanghai ]; then \
     sed -i "s%${DEB_OLD}%${DEB_NEW}%g" /etc/apt/sources.list && \
     printf "[global]\nindex-url=${INDEX_URL}\ntrusted-host=${TRUSTED_HOST}\n" \
     > /etc/pip.conf; \
@@ -287,16 +287,18 @@ RUN --mount=type=cache,id=apt-cache-train,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
         git \
         sudo \
-        nano \
         tmux \
+        htop \
+        neovim \
+        libgl1-mesa-glx \
         openssh-server \
         tzdata && \
     rm -rf /var/lib/apt/lists/*
 
 ARG GID
 ARG UID
-ARG GRP=user
-ARG USR=user
+ARG GRP=fkw
+ARG USR=fkw
 ARG PASSWD=ubuntu
 # Create user with home directory and password-free sudo permissions.
 # This may cause security issues. Use at your own risk.
@@ -332,8 +334,24 @@ RUN conda config --set pip_interop_enabled True
 
 # Install numpy from conda to use MKL.
 RUN conda install -y \
-        numpy==1.20.3 && \
-    conda clean -ya
+        coremltools=4.1.0 \
+        cython=0.29.24 \
+        gpustat=0.6.0 \
+        jupyterlab=3.2.1 \
+        matplotlib=3.5.0 \
+        notebook=6.4.6 \
+        numpy=1.21.2 \
+        openpyxl=3.0.9 \
+        pandas=1.3.4 \
+        pillow=8.4.0 \
+        pybind11=2.8.1 \
+        pyyaml=6.0 \
+        scikit-learn=1.0.1 \
+        scipy=1.7.1 \
+        seaborn=0.11.2 \
+        tensorboard=2.6.0 \
+        tqdm=4.62.3 \
+    && conda clean -ya
 
 # Not using a `requirements.txt` file by design as this would create an external dependency.
 # Also, the file would not be a true requirements file because of the source builds and conda installs.
@@ -342,17 +360,28 @@ RUN --mount=type=cache,id=pip-train,target=${PIP_DOWNLOAD_CACHE} \
     --mount=type=bind,from=train-builds,source=/tmp/dist,target=/tmp/dist \
     python -m pip install \
         /tmp/dist/*.whl \
-        torch_tb_profiler==0.2.1 \
-        jupyterlab==3.2.0 \
+        accelerate==0.5.1 \
+        albumentations==1.1.0 \
+        git+http://github.com/imyhxy/ccocotools \
+        gsutil==5.5 \
         hydra-core==1.1.0 \
         hydra_colorlog==1.1.0 \
-        accelerate==0.5.1 \
+        onnx-simplifier==0.3.6 \
+        onnx==1.10.2 \
+        onnxruntime-gpu==1.10.0 \
+        onnxruntime==1.10.0 \
+        opencv-python-headless==4.5.4.60 \
+        opencv-python==4.5.4.60 \
+        pycocotools==2.0.3 \
         pytorch-lightning==1.5.2 \
-        seaborn==0.11.1 \
-        pandas==1.3.1 \
-        openpyxl==3.0.9 \
-        scikit-learn==1.0 \
-        wandb==0.12.4
+        thop==0.0.31-2005241907 \
+        torch_tb_profiler==0.2.1 \
+        wandb==0.12.7
+
+RUN --mount=type=cache,id=pip-train,target=${PIP_DOWNLOAD_CACHE} \
+    --mount=type=bind,from=train-builds,source=/tmp/dist,target=/tmp/dist \
+    python -m pip install \
+        mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.10.0/index.html
 
 CMD ["/bin/bash"]
 

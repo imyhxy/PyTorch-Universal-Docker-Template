@@ -231,6 +231,25 @@ RUN --mount=type=cache,target=/opt/ccache \
     python setup.py bdist_wheel -d /tmp/dist
 
 
+FROM build-torch AS build-mmcv
+
+ARG MMCV_WITH_OPS=1
+ARG MMCV_VERSION_TAG=v1.4.0
+
+WORKDIR /opt
+RUN git clone --recursive --jobs 0 https://github.com/open-mmlab/mmcv.git
+
+WORKDIR /opt/mmcv
+RUN if [ -n {MMCV_VERSION_TAG} ]; then \
+    git checkout ${MMCV_VERSION_TAG} && \
+    git submodule sync && \
+    git submodule update --init --recursive --jobs 0 && \
+    MMCV_WITH_OPS=${MMCV_WITH_OPS} \
+    TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST} \
+    python setup.py bdist_wheel -d /tmp/dist; \
+    fi
+
+
 FROM ${BUILD_IMAGE} AS train-builds
 # A convenience layer to gather PyTorch and subsidiary builds required for training.
 # If other source builds are included later on, gather them here as well.
@@ -240,6 +259,7 @@ COPY --from=build-install /opt/conda /opt/conda
 COPY --from=build-vision /tmp/dist /tmp/dist
 COPY --from=build-text /tmp/dist /tmp/dist
 COPY --from=build-audio /tmp/dist /tmp/dist
+COPY --from=build-mmcv /tmp/dist /tmp/dist
 
 
 FROM ${TRAIN_IMAGE} AS train
@@ -349,6 +369,7 @@ RUN conda install -y \
         scikit-learn=1.0.1 \
         scipy=1.7.1 \
         seaborn=0.11.2 \
+        six=1.16.0 \
         tensorboard=2.6.0 \
         tqdm=4.62.3 \
     && conda clean -ya
@@ -374,14 +395,10 @@ RUN --mount=type=cache,id=pip-train,target=${PIP_DOWNLOAD_CACHE} \
         opencv-python==4.5.4.60 \
         pycocotools==2.0.3 \
         pytorch-lightning==1.5.2 \
+        terminaltables==3.1.10 \
         thop==0.0.31-2005241907 \
         torch_tb_profiler==0.2.1 \
         wandb==0.12.7
-
-RUN --mount=type=cache,id=pip-train,target=${PIP_DOWNLOAD_CACHE} \
-    --mount=type=bind,from=train-builds,source=/tmp/dist,target=/tmp/dist \
-    python -m pip install \
-        mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.10.0/index.html
 
 CMD ["/bin/bash"]
 

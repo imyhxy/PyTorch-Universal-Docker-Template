@@ -234,7 +234,7 @@ RUN --mount=type=cache,target=/opt/ccache \
 FROM build-torch AS build-mmcv
 
 ARG MMCV_WITH_OPS=1
-ARG MMCV_VERSION_TAG=v1.4.0
+ARG MMCV_VERSION_TAG
 
 WORKDIR /opt
 RUN git clone --recursive --jobs 0 https://github.com/open-mmlab/mmcv.git

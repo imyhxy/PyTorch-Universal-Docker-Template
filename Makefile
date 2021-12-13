@@ -42,6 +42,7 @@ PYTORCH_VERSION_TAG     = v1.10.0
 TORCHVISION_VERSION_TAG = v0.11.1
 TORCHTEXT_VERSION_TAG   = v0.11.0-rc3
 TORCHAUDIO_VERSION_TAG  = v0.10.0
+MMCV_VERSION_TAG        = v1.4.0
 TORCH_NAME              = build_torch-${PYTORCH_VERSION_TAG}
 INSTALL_NAME            = build_install
 
@@ -64,6 +65,7 @@ build-torch:
 		--build-arg TORCHVISION_VERSION_TAG=${TORCHVISION_VERSION_TAG} \
 		--build-arg TORCHTEXT_VERSION_TAG=${TORCHTEXT_VERSION_TAG} \
 		--build-arg TORCHAUDIO_VERSION_TAG=${TORCHAUDIO_VERSION_TAG} \
+		--build-arg MMCV_VERSION_TAG=${MMCV_VERSION_TAG} \
 		--build-arg BUILDKIT_INLINE_CACHE=1 \
 		- < Dockerfile
 
@@ -85,6 +87,7 @@ build-train:
 		--build-arg TORCHVISION_VERSION_TAG=${TORCHVISION_VERSION_TAG} \
 		--build-arg TORCHTEXT_VERSION_TAG=${TORCHTEXT_VERSION_TAG} \
 		--build-arg TORCHAUDIO_VERSION_TAG=${TORCHAUDIO_VERSION_TAG} \
+		--build-arg MMCV_VERSION_TAG=${MMCV_VERSION_TAG} \
 		--build-arg GID="$(shell id -g)" \
 		--build-arg UID="$(shell id -u)" \
 		--build-arg TZ=${TZ} \

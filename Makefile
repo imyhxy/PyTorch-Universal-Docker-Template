@@ -36,6 +36,7 @@ di:
 
 # The following are the default builds for the make commands.
 CC                      = 7.5
+MAX_JOBS                = 8
 TRAIN_NAME              = train
 TZ                      = Asia/Shanghai
 PYTORCH_VERSION_TAG     = v1.10.0
@@ -66,6 +67,7 @@ build-torch:
 		--build-arg TORCHTEXT_VERSION_TAG=${TORCHTEXT_VERSION_TAG} \
 		--build-arg TORCHAUDIO_VERSION_TAG=${TORCHAUDIO_VERSION_TAG} \
 		--build-arg MMCV_VERSION_TAG=${MMCV_VERSION_TAG} \
+		--build-arg MAX_JOBS=${MAX_JOBS} \
 		--build-arg BUILDKIT_INLINE_CACHE=1 \
 		- < Dockerfile
 

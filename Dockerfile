@@ -100,6 +100,14 @@ FROM build-base AS build-install
 # Magma version must match CUDA version of build image.
 ARG MAGMA_VERSION=113
 
+WORKDIR /opt
+# Using --jobs 0 gives a reasonable default value for parallel recursion.
+RUN git clone --recursive --jobs 0 https://github.com/pytorch/pytorch.git
+RUN git clone --recursive --jobs 0 https://github.com/pytorch/vision.git
+RUN git clone --recursive --jobs 0 https://github.com/pytorch/text.git
+RUN git clone --recursive --jobs 0 https://github.com/pytorch/audio.git
+RUN git clone --recursive --jobs 0 https://github.com/open-mmlab/mmcv.git
+
 # Maybe fix versions for these libraries. Also maybe sort packages alphabetically.
 # Perhaps multiple conda installs are not the best solution but
 # Using multiple channels in one install would use older packages.
@@ -125,13 +133,6 @@ RUN --mount=type=cache,id=conda-build,target=/opt/conda/pkgs \
     conda install -y -c conda-forge \
         libpng \
         libjpeg-turbo
-
-WORKDIR /opt
-# Using --jobs 0 gives a reasonable default value for parallel recursion.
-RUN git clone --recursive --jobs 0 https://github.com/pytorch/pytorch.git
-RUN git clone --recursive --jobs 0 https://github.com/pytorch/vision.git
-RUN git clone --recursive --jobs 0 https://github.com/pytorch/text.git
-RUN git clone --recursive --jobs 0 https://github.com/pytorch/audio.git
 
 
 FROM build-install AS build-torch
@@ -233,21 +234,24 @@ RUN --mount=type=cache,target=/opt/ccache \
 
 FROM build-torch AS build-mmcv
 
+ARG FORCE_CUDA=1
 ARG MMCV_WITH_OPS=1
+ARG MAX_JOBS
 ARG MMCV_VERSION_TAG
-
-WORKDIR /opt
-RUN git clone --recursive --jobs 0 https://github.com/open-mmlab/mmcv.git
 
 WORKDIR /opt/mmcv
 RUN if [ -n {MMCV_VERSION_TAG} ]; then \
     git checkout ${MMCV_VERSION_TAG} && \
     git submodule sync && \
-    git submodule update --init --recursive --jobs 0 && \
-    MMCV_WITH_OPS=${MMCV_WITH_OPS} \
-    TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST} \
-    python setup.py bdist_wheel -d /tmp/dist; \
+    git submodule update --init --recursive --jobs 0; \
     fi
+
+RUN --mount=type=cache,target=/opt/ccache \
+    FORCE_CUDA=${FORCE_CUDA} \
+    MMCV_WITH_OPS=${MMCV_WITH_OPS} \
+    MAX_JOBS=${MAX_JOBS} \
+    TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST} \
+    python setup.py bdist_wheel -d /tmp/dist
 
 
 FROM ${BUILD_IMAGE} AS train-builds
